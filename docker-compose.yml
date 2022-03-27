@@ -1,0 +1,38 @@
+version: '3.3'
+services:
+
+  notifications:
+    image: thecodingmachine/php:7.4-v3-apache-node12
+    volumes:
+      - ./:/var/www/html/:delegated
+      - ~/.composer/docker-cache/:/root/.composer:cached
+    environment:
+      XDEBUG_CONFIG: remote_host=host.docker.internal
+      PHP_EXTENSION_XDEBUG: 1
+      PHP_EXTENSION_MYSQLI: 1
+      PHP_INI_MEMORY_LIMIT: 1g
+      PHP_EXTENSION_GD: 1
+      PHP_EXTENSION_BZ2: 1
+      PHP_EXTENSION_INTL: 1
+      PHP_EXTENSION_IMAGICK: 1
+      PHP_INI_UPLOAD_MAX_FILESIZE: 1g
+      PHP_INI_XDEBUG__PROFILER_ENABLE: 0
+      PHP_INI_XDEBUG__PROFILER_OUTPUT_DIR: '/var/www/html/logs'
+      PHP_INI_XDEBUG__REMOTE_START: 1
+      PHP_IDE_CONFIG: 'serverName=cake-notifications.site'
+    restart: unless-stopped
+    labels:
+      # Setup rules for websocket connection
+      - traefik.http.routers.cake-notifications-http.rule=host(`cake-notifications.site`)
+      - traefik.http.routers.cake-notifications-http.entrypoints=http
+
+      - traefik.http.routers.cake-notifications-https.rule=host(`cake-notifications.site`)
+      - traefik.http.routers.cake-notifications-https.tls=true
+      - traefik.http.routers.cake-notifications-https.entrypoints=https
+
+      - traefik.http.services.cake-notifications-https.loadbalancer.server.port=80
+
+networks:
+  default:
+    external:
+      name: nginx-proxy
